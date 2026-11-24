@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
+import { InstallHint } from '@/components/install-hint';
 import { Button, Muted, Screen } from '@/components/ui';
 import { ROUNDS } from '@/game/rounds';
 import { sortedGames, useGameStore } from '@/store/gameStore';
@@ -46,6 +47,7 @@ export default function Home() {
       </View>
 
       <View style={styles.actions}>
+        <InstallHint />
         {canResume && (
           <Button
             label="Reprendre la dernière partie"
@@ -86,16 +88,21 @@ export default function Home() {
             on={prefs.soundEnabled}
             onPress={prefs.toggleSound}
           />
-          <PrefToggle
-            label="📳 Vibrations"
-            on={prefs.hapticsEnabled}
-            onPress={prefs.toggleHaptics}
-          />
+          {canVibrate && (
+            <PrefToggle
+              label="📳 Vibrations"
+              on={prefs.hapticsEnabled}
+              onPress={prefs.toggleHaptics}
+            />
+          )}
         </View>
       </View>
     </Screen>
   );
 }
+
+/** Sur le web, seuls certains navigateurs savent faire vibrer (pas Safari sur iPhone). */
+const canVibrate = Platform.OS !== 'web' || 'vibrate' in navigator;
 
 function PrefToggle({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (

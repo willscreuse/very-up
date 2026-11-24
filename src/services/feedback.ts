@@ -6,7 +6,11 @@ import { playSound, type SoundName } from '@/services/sounds';
 import { usePreferences } from '@/store/preferencesStore';
 
 const safe = (fn: () => Promise<unknown>) => {
-  fn().catch(() => {});
+  try {
+    fn().catch(() => {});
+  } catch {
+    // Vibrations indisponibles (navigateur, iPhone sur le web…) : on ignore.
+  }
 };
 
 function emit(sound: SoundName | null, haptic: (() => Promise<unknown>) | null) {

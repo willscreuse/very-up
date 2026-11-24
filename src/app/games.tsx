@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInUp, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { Button, Muted, Screen, Title } from '@/components/ui';
@@ -7,6 +7,7 @@ import { packById } from '@/data/packs';
 import { writingOrder } from '@/game/engine';
 import { ROUNDS } from '@/game/rounds';
 import { currentPlayer, scoreboard } from '@/game/selectors';
+import { confirmAction } from '@/services/confirm';
 import { type SavedGame, sortedGames, useGameStore } from '@/store/gameStore';
 import { colors, font, radius, spacing } from '@/theme/tokens';
 
@@ -45,24 +46,20 @@ export default function Games() {
   const finishedCount = list.filter((g) => g.game.phase === 'finished').length;
 
   const confirmDelete = (saved: SavedGame) =>
-    Alert.alert(
-      'Supprimer cette partie ?',
-      `${saved.game.teams.map((t) => t.name).join(' · ')}\nCette action est définitive.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: () => deleteGame(saved.id) },
-      ],
-    );
+    confirmAction({
+      title: 'Supprimer cette partie ?',
+      message: `${saved.game.teams.map((t) => t.name).join(' · ')}\nCette action est définitive.`,
+      confirmLabel: 'Supprimer',
+      onConfirm: () => deleteGame(saved.id),
+    });
 
   const confirmDeleteFinished = () =>
-    Alert.alert(
-      `Supprimer ${finishedCount} partie${finishedCount > 1 ? 's' : ''} terminée${finishedCount > 1 ? 's' : ''} ?`,
-      'Les parties en cours sont conservées.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: deleteFinishedGames },
-      ],
-    );
+    confirmAction({
+      title: `Supprimer ${finishedCount} partie${finishedCount > 1 ? 's' : ''} terminée${finishedCount > 1 ? 's' : ''} ?`,
+      message: 'Les parties en cours sont conservées.',
+      confirmLabel: 'Supprimer',
+      onConfirm: deleteFinishedGames,
+    });
 
   return (
     <Screen scroll>

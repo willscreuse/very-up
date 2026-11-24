@@ -35,6 +35,21 @@ Les cartes devinées en manche 1 reviennent en manche 2 et 3. Retenez bien vos d
 - ⚡ Si une équipe vide le paquet avant la fin du chrono, elle garde son temps restant
   pour la manche suivante
 
+## Jouer sur iPhone, iPad ou ordinateur
+
+Very Up existe aussi en **version web installable**, gratuite et sans App Store :
+**👉 [willscreuse.github.io/very-up](https://willscreuse.github.io/very-up/)**
+
+- **iPhone / iPad** : ouvrez le lien dans **Safari**, touchez **Partager** (le carré avec une
+  flèche ↑), puis **« Sur l'écran d'accueil »**. Very Up apparaît avec son icône et s'ouvre en
+  plein écran, comme une app.
+- **Android / ordinateur** : ouvrez le lien dans Chrome ou Edge, puis choisissez **« Installer »**
+  (bandeau dans l'app ou menu du navigateur).
+
+Une fois ouverte une première fois, l'app fonctionne **hors ligne**. Les parties sont sauvegardées
+dans le navigateur : effacer les données de Safari ou de Chrome les supprime. Sur iPhone, Safari
+ne permet pas les vibrations ; les sons fonctionnent.
+
 ## Télécharger (Android)
 
 1. Ouvrez la page [**Releases**](../../releases/latest) depuis votre téléphone Android.
@@ -63,6 +78,7 @@ npx expo start        # puis scanner le QR code avec l'app Expo Go
 ```
 
 ```bash
+npm run build:web     # version web dans dist/ (publiée automatiquement sur GitHub Pages à chaque push)
 npm test              # tests (moteur de jeu, sauvegardes, paquets)
 npm run typecheck     # vérification TypeScript
 npx expo lint         # lint

@@ -10,6 +10,7 @@ import subprocess
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 BRAND = os.path.join(ROOT, 'assets', 'brand')
 IMAGES = os.path.join(ROOT, 'assets', 'images')
+WEB_ICONS = os.path.join(ROOT, 'public', 'icons')
 
 NIGHT = '#160B2E'
 GLOW = '#3A2378'
@@ -96,6 +97,8 @@ SOURCES = {
   </g>'''),
     # Écran de démarrage : logo seul, le fond est la couleur de l'app.
     'splash-icon': svg(mark(1.0)),
+    # Web « maskable » : Android peut rogner jusqu'à 20 % du bord, le logo reste au centre.
+    'web-maskable': svg(BACKGROUND + mark(0.9)),
 }
 
 SIZES = {
@@ -107,9 +110,9 @@ SIZES = {
 }
 
 
-def render(name, size, out_name=None):
+def render(name, size, out_name=None, out_dir=IMAGES):
     src = os.path.join(BRAND, f'{name}.svg')
-    out = os.path.join(IMAGES, f'{out_name or name}.png')
+    out = os.path.join(out_dir, f'{out_name or name}.png')
     subprocess.run(['rsvg-convert', '-w', str(size), '-h', str(size), src, '-o', out], check=True)
     print(f'  {os.path.relpath(out, ROOT)}  {size}px')
 
@@ -124,3 +127,9 @@ if __name__ == '__main__':
         render(name, size)
     render('icon', 48, 'favicon')
     render('splash-icon', 256, 'logo')  # petit logo affiché dans l'app
+    # Version web installable (PWA)
+    os.makedirs(WEB_ICONS, exist_ok=True)
+    render('icon', 180, 'apple-touch-icon', WEB_ICONS)  # écran d'accueil iPhone
+    render('icon', 192, 'icon-192', WEB_ICONS)
+    render('icon', 512, 'icon-512', WEB_ICONS)
+    render('web-maskable', 512, 'icon-maskable-512', WEB_ICONS)

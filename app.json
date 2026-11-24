@@ -29,7 +29,13 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Very Up",
+      "shortName": "Very Up",
+      "lang": "fr",
+      "description": "Le jeu d'ambiance en équipes en 3 manches : description, un seul mot, mimes.",
+      "themeColor": "#160B2E",
+      "backgroundColor": "#160B2E"
     },
     "plugins": [
       "expo-router",
@@ -64,15 +70,11 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": true,
+      "baseUrl": "/very-up"
     },
     "backgroundColor": "#160B2E",
     "extra": {
-      "router": {
-        "asyncRoutes": {
-          "web": true
-        }
-      },
       "eas": {
         "projectId": "fb685688-9684-4632-ac0b-d042af340c94"
       }

@@ -1,5 +1,5 @@
 import { type Ref, useEffect, useImperativeHandle } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
@@ -33,6 +33,15 @@ interface Props {
 }
 
 const FLY_DURATION = 170;
+
+/** `adjustsFontSizeToFit` n'existe pas sur le web : on y adapte la taille à la longueur. */
+function webFontSize(text: string): number | undefined {
+  if (Platform.OS !== 'web') return undefined;
+  const longestWord = Math.max(...text.split(/\s+/).map((w) => w.length));
+  if (text.length > 30 || longestWord > 12) return font.title + 4;
+  if (text.length > 18 || longestWord > 9) return font.heading + 2;
+  return font.display;
+}
 const VELOCITY_TRIGGER = 900;
 const SPRING = { damping: 14, stiffness: 180, mass: 0.8 };
 
@@ -145,7 +154,10 @@ export function SwipeCard({ ref, card, borderColor, onFlingStart, onResult }: Pr
           {card && (
             <>
               {card.category && <Text style={styles.category}>{card.category}</Text>}
-              <Text style={styles.cardText} adjustsFontSizeToFit numberOfLines={3}>
+              <Text
+                style={[styles.cardText, { fontSize: webFontSize(card.text) ?? font.display }]}
+                adjustsFontSizeToFit
+                numberOfLines={3}>
                 {card.text}
               </Text>
             </>
@@ -164,6 +176,7 @@ const styles = StyleSheet.create({
   hintText: { fontSize: font.caption, fontWeight: '800' },
   card: {
     flex: 1,
+    userSelect: 'none',
     backgroundColor: colors.text,
     borderRadius: radius.lg,
     borderWidth: 6,

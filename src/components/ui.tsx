@@ -133,7 +133,14 @@ export function ChipGroup<T extends string | number>({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, gap: spacing.md },
+  content: {
+    padding: spacing.lg,
+    gap: spacing.md,
+    // Sur tablette, ordinateur ou navigateur : une colonne centrée façon téléphone.
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
+  },
   fill: { flex: 1 },
   button: {
     minHeight: 56,

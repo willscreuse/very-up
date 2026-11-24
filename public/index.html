@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <!-- viewport-fit=cover : plein écran sous l'encoche de l'iPhone ; pas de zoom au double appui. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>%WEB_TITLE%</title>
+
+    <!-- Application installable (PWA) -->
+    <link rel="manifest" href="/very-up/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/very-up/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Very Up" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+        background-color: #160b2e;
+      }
+      body {
+        overflow: hidden;
+        /* Pas de rebond ni de « tirer pour rafraîchir » pendant les swipes. */
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      input,
+      textarea {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>Very Up a besoin de JavaScript pour fonctionner.</noscript>
+    <div id="root"></div>
+    <script>
+      // Fonctionnement hors ligne : le service worker est généré à la publication (tools/build-web.mjs).
+      if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/very-up/sw.js', { scope: '/very-up/' }).catch(function () {});
+        });
+      }
+    </script>
+  </body>
+</html>
