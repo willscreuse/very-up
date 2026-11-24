@@ -41,10 +41,17 @@ Les cartes devinées en manche 1 reviennent en manche 2 et 3. Retenez bien vos d
 2. Téléchargez le fichier `very-up-x.y.z.apk`.
 3. Ouvrez-le. Android vous demandera d'autoriser l'installation d'applications provenant de
    cette source (votre navigateur ou votre gestionnaire de fichiers) : acceptez.
-4. Very Up apparaît avec les autres applications. Bonne partie !
+4. **Google Play Protect** peut afficher une fenêtre « Application inconnue » ou « Installation
+   bloquée ». Appuyez sur la **petite flèche** (« Plus de détails ») pour déplier la fenêtre,
+   puis sur **« Installer quand même »**.
+5. Very Up apparaît avec les autres applications. Bonne partie !
 
-> L'application n'est pas (encore) sur le Play Store. C'est pour cela qu'Android affiche un
-> avertissement à l'installation.
+> L'application n'est pas (encore) sur le Play Store : c'est pour cela qu'Android et Play Protect
+> affichent un avertissement à l'installation. L'app ne demande aucune permission sensible
+> (ni Internet, ni stockage, ni micro) et fonctionne entièrement hors ligne.
+
+Pour mettre à jour, installez simplement la nouvelle version par-dessus l'ancienne : vos parties
+sauvegardées sont conservées.
 
 ## Développement
 
