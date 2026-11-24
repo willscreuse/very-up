@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#3A2378"/>
+      <stop offset="1" stop-color="#160B2E"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs><rect width="1024" height="1024" fill="url(#bg)"/>
+  <g transform="translate(512 512) scale(1.12) translate(-512 -530)">
+    <g filter="url(#shadow)">
+      <rect x="362" y="300" width="300" height="420" rx="44" fill="#FF4F8B" transform="rotate(-17 512 820)" />
+      <rect x="362" y="300" width="300" height="420" rx="44" fill="#2EC4B6" transform="rotate(15 512 820)" />
+      <rect x="362" y="300" width="300" height="420" rx="44" fill="#FFD23F" transform="rotate(0 512 820)" />
+    </g>
+    <rect x="380" y="318" width="264" height="384"
+          rx="30" fill="none" stroke="#160B2E" stroke-opacity="0.12" stroke-width="6"/>
+    <path d="M512 372 L626 498 L560 498 L560 628 L464 628 L464 498 L398 498 Z" fill="#160B2E" stroke="#160B2E" stroke-width="26" stroke-linejoin="round"/>
+    <path d="M730 254 Q742.88 287.12 776 300 Q742.88 312.88 730 346 Q717.12 312.88 684 300 Q717.12 287.12 730 254 Z" fill="#FFD23F"/>
+    <path d="M286 342 Q293.84 362.16 314 370 Q293.84 377.84 286 398 Q278.16 377.84 258 370 Q278.16 362.16 286 342 Z" fill="#FFFFFF"/>
+    <path d="M770 410 Q775.6 424.4 790 430 Q775.6 435.6 770 450 Q764.4 435.6 750 430 Q764.4 424.4 770 410 Z" fill="#FFFFFF"/>
+  </g>
+</svg>
