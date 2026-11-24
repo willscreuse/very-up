@@ -15,7 +15,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.veryup.app"
+      "package": "com.veryup.app",
+      "blockedPermissions": [
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "server",
@@ -35,7 +40,8 @@
         "expo-audio",
         {
           "microphonePermission": false,
-          "recordAudioAndroid": false
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
         }
       ],
       "expo-asset"
@@ -44,6 +50,17 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "backgroundColor": "#160B2E"
+    "backgroundColor": "#160B2E",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "fb685688-9684-4632-ac0b-d042af340c94"
+      }
+    },
+    "owner": "willscreuse"
   }
 }
