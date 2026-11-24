@@ -1,6 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+
+import { persistStorage } from '@/store/storage';
 
 interface PreferencesStore {
   soundEnabled: boolean;
@@ -20,7 +21,7 @@ export const usePreferences = create<PreferencesStore>()(
     }),
     {
       name: 'very-up/preferences',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: persistStorage,
       partialize: ({ soundEnabled, hapticsEnabled }) => ({ soundEnabled, hapticsEnabled }),
     },
   ),

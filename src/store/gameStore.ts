@@ -1,11 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
 import { buildPool, DEFAULT_PACK_IDS } from '@/data/packs';
 import { createGame, gameReducer } from '@/game/engine';
 import { randomSeed } from '@/game/random';
 import type { GameAction, GameState, Settings, Team } from '@/game/types';
+import { persistStorage } from '@/store/storage';
 
 export const DEFAULT_SETTINGS: Settings = {
   turnSeconds: 30,
@@ -104,7 +104,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'very-up/game',
       version: 2,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: persistStorage,
       partialize: ({ games, activeId, lastSetup, recentCards }) => ({
         games,
         activeId,
