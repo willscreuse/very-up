@@ -7,9 +7,10 @@ import {
   type GameState,
   type Settings,
   type Team,
-  MIN_CARRY_OVER_MS,
   ROUND_COUNT,
+  type WrittenCard,
 } from './types';
+import { cardKey, normalizeText } from './text';
 
 export interface NewGameInput {
   teams: Team[];
@@ -57,7 +58,7 @@ export function createGame({ teams, settings, pool, seed, recent = [] }: NewGame
     playerCursor: teams.map(() => 0),
     currentTurn: [],
     turnEndsAt: null,
-    carryOverMs: null,
+    keepsTurn: false,
     history: [],
     rng: rng2,
   };
@@ -68,20 +69,23 @@ export function writingOrder(state: GameState) {
   return state.teams.flatMap((team) => team.players.map((player) => ({ team, player })));
 }
 
-const normalize = (text: string) => text.trim().replace(/\s+/g, ' ');
-const key = (text: string) => normalize(text).toLocaleLowerCase('fr');
-
 /** Assemble le paquet final : cartes des joueurs, complétées par celles des paquets. */
-function finishWriting(state: GameState, cards: { authorId: string; text: string }[]): GameState {
+function finishWriting(state: GameState, cards: WrittenCard[]): GameState {
   const seen = new Set<string>();
   const custom: Omit<Card, 'id'>[] = [];
   for (const c of cards) {
-    if (seen.has(key(c.text))) continue; // deux joueurs ont eu la même idée
-    seen.add(key(c.text));
-    custom.push({ text: normalize(c.text), category: CUSTOM_CATEGORY, authorId: c.authorId });
+    const k = cardKey(c.text);
+    if (seen.has(k)) continue; // deux joueurs ont eu la même idée
+    seen.add(k);
+    custom.push({
+      text: normalizeText(c.text),
+      category: c.category ?? CUSTOM_CATEGORY,
+      authorId: c.authorId,
+      custom: true,
+    });
   }
   const fillCount = Math.max(0, state.settings.cardCount - custom.length);
-  const fill = state.deck.filter((c) => !seen.has(key(c.text))).slice(0, fillCount);
+  const fill = state.deck.filter((c) => !seen.has(cardKey(c.text))).slice(0, fillCount);
   const deck: Card[] = [...custom, ...fill].map((c, i) => ({ ...c, id: `c${i}` }));
   const [pile, rng] = shuffle(
     deck.map((c) => c.id),
@@ -90,17 +94,28 @@ function finishWriting(state: GameState, cards: { authorId: string; text: string
   return { ...state, deck, pile, rng, writing: null, phase: 'turnIntro' };
 }
 
+/** Remélange le paquet en s'assurant que la carte du dessus change. */
+function reshuffle(pile: string[], rng: number): [string[], number] {
+  const [out, next] = shuffle(pile, rng);
+  if (out.length > 1 && out[0] === pile[0]) [out[0], out[out.length - 1]] = [out[out.length - 1], out[0]];
+  return [out, next];
+}
+
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SUBMIT_CUSTOM_CARDS': {
       if (state.phase !== 'writing' || !state.writing) return state;
       const order = writingOrder(state);
       const author = order[state.writing.playerIndex];
-      const texts = action.texts
-        .map((t) => normalize(t).slice(0, CUSTOM_CARD_MAX_LENGTH))
-        .filter(Boolean);
-      if (!author || texts.length === 0) return state;
-      const cards = [...state.writing.cards, ...texts.map((text) => ({ authorId: author.player.id, text }))];
+      const written: WrittenCard[] = action.cards
+        .map((c) => ({
+          authorId: author?.player.id ?? '',
+          text: normalizeText(c.text).slice(0, CUSTOM_CARD_MAX_LENGTH),
+          ...(c.category ? { category: c.category } : {}),
+        }))
+        .filter((c) => c.text);
+      if (!author || written.length === 0) return state;
+      const cards = [...state.writing.cards, ...written];
       const playerIndex = state.writing.playerIndex + 1;
       if (playerIndex >= order.length) return finishWriting(state, cards);
       return { ...state, writing: { playerIndex, cards } };
@@ -108,13 +123,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'START_TURN': {
       if (state.phase !== 'turnIntro' || state.pile.length === 0) return state;
-      const durationMs = state.carryOverMs ?? state.settings.turnSeconds * 1000;
+      // Chaque tour dure le temps complet, même pour l'équipe qui enchaîne une nouvelle manche.
       return {
         ...state,
         phase: 'playing',
         currentTurn: [],
-        turnEndsAt: action.now + durationMs,
-        carryOverMs: null,
+        turnEndsAt: action.now + state.settings.turnSeconds * 1000,
+        keepsTurn: false,
       };
     }
 
@@ -122,17 +137,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.phase !== 'playing' || state.pile.length === 0) return state;
       const [cardId, ...rest] = state.pile;
       const currentTurn = [...state.currentTurn, { cardId, result: 'found' as const }];
-      // Plus aucune carte : la manche est terminée, le tour s'arrête
-      // et on mémorise le temps restant pour la manche suivante.
+      // Plus aucune carte : la manche est terminée, le tour s'arrête et
+      // cette équipe commencera la manche suivante.
       if (rest.length === 0) {
-        const left = state.turnEndsAt === null ? 0 : Math.max(0, state.turnEndsAt - action.now);
         return {
           ...state,
           pile: rest,
           currentTurn,
           phase: 'turnSummary',
           turnEndsAt: null,
-          carryOverMs: left,
+          keepsTurn: true,
         };
       }
       return { ...state, pile: rest, currentTurn };
@@ -161,7 +175,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'TIME_UP': {
       if (state.phase !== 'playing') return state;
-      return { ...state, phase: 'turnSummary', turnEndsAt: null, carryOverMs: null };
+      return { ...state, phase: 'turnSummary', turnEndsAt: null, keepsTurn: false };
     }
 
     case 'TOGGLE_EVENT': {
@@ -179,7 +193,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const pile = toFound
         ? state.pile.filter((id) => id !== event.cardId)
         : [...state.pile, event.cardId];
-      return { ...state, currentTurn, pile };
+      // Une correction qui remet une carte dans le paquet : la manche continue.
+      return { ...state, currentTurn, pile, keepsTurn: state.keepsTurn && pile.length === 0 };
     }
 
     case 'CONFIRM_TURN': {
@@ -195,18 +210,27 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const phase = !roundOver ? 'turnIntro' : gameOver ? 'finished' : 'roundSummary';
 
       // Paquet vidé avant la fin du chrono : la même équipe (et le même joueur)
-      // enchaîne la manche suivante avec le temps qui lui restait.
-      const carryOverMs =
-        roundOver && !gameOver && (state.carryOverMs ?? 0) >= MIN_CARRY_OVER_MS
-          ? state.carryOverMs
-          : null;
-      if (carryOverMs !== null) {
-        return { ...state, history, currentTurn: [], phase, carryOverMs };
+      // commence la manche suivante, avec un chrono complet.
+      if (roundOver && !gameOver && state.keepsTurn) {
+        return { ...state, history, currentTurn: [], phase, keepsTurn: true };
       }
 
+      // La carte que le joueur avait en main (ni trouvée ni passée) ne doit pas
+      // arriver directement à l'équipe suivante : on remélange le paquet.
+      const [pile, rng] = roundOver ? [state.pile, state.rng] : reshuffle(state.pile, state.rng);
       const playerCursor = state.playerCursor.map((c, i) => (i === state.teamIndex ? c + 1 : c));
       const teamIndex = (state.teamIndex + 1) % state.teams.length;
-      return { ...state, history, playerCursor, teamIndex, currentTurn: [], phase, carryOverMs: null };
+      return {
+        ...state,
+        history,
+        pile,
+        rng,
+        playerCursor,
+        teamIndex,
+        currentTurn: [],
+        phase,
+        keepsTurn: false,
+      };
     }
 
     case 'NEXT_ROUND': {

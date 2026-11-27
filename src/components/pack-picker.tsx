@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { EraTimeline } from '@/components/era-timeline';
 import { isDated, PACKS, type PackEras, packCards, rangeLabel } from '@/data/packs';
 import { feedback } from '@/services/feedback';
+import { useCustomCards } from '@/store/customCardsStore';
 import { colors, font, radius, spacing } from '@/theme/tokens';
 
 export function PackPicker({
@@ -16,6 +17,8 @@ export function PackPicker({
   eras: PackEras;
   onErasChange: (eras: PackEras) => void;
 }) {
+  const playerCards = useCustomCards((s) => s.cards);
+  const playerCount = (packId: string) => playerCards.filter((c) => c.packId === packId).length;
   const allSelected = selected.length === PACKS.length;
   const datedSelected = PACKS.filter((p) => selected.includes(p.id) && isDated(p));
 
@@ -46,7 +49,7 @@ export function PackPicker({
               key={pack.id}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: on }}
-              accessibilityLabel={`${pack.name}, ${pack.cards.length} cartes. ${pack.description}`}
+              accessibilityLabel={`${pack.name}, ${pack.cards.length + playerCount(pack.id)} cartes. ${pack.description}`}
               onPress={() => toggle(pack.id)}
               style={({ pressed }) => [styles.tile, on && styles.tileOn, pressed && styles.pressed]}>
               {on && (
@@ -59,7 +62,9 @@ export function PackPicker({
                 {pack.name}
               </Text>
               <View style={styles.metaRow}>
-                <Text style={styles.count}>{packCards(pack, eras).length} cartes</Text>
+                <Text style={styles.count}>
+                  {packCards(pack, eras).length + playerCount(pack.id)} cartes
+                </Text>
                 {pack.badge && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{pack.badge}</Text>

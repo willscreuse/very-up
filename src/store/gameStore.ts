@@ -5,6 +5,7 @@ import { buildPool, DEFAULT_PACK_IDS } from '@/data/packs';
 import { createGame, gameReducer } from '@/game/engine';
 import { randomSeed } from '@/game/random';
 import type { GameAction, GameState, Settings, Team } from '@/game/types';
+import { useCustomCards } from '@/store/customCardsStore';
 import { persistStorage } from '@/store/storage';
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -58,7 +59,11 @@ export const useGameStore = create<GameStore>()(
         set((s) => {
           const id = newId();
           const now = Date.now();
-          const pool = buildPool(settings.packIds ?? DEFAULT_PACK_IDS, settings.packEras);
+          const pool = buildPool(
+            settings.packIds ?? DEFAULT_PACK_IDS,
+            settings.packEras,
+            useCustomCards.getState().cards,
+          );
           const game = createGame({ teams, settings, pool, seed: randomSeed(), recent: s.recentCards });
           const drawn = new Set(game.deck.map((c) => c.text));
           const recentCards = [

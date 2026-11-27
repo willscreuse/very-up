@@ -28,7 +28,7 @@ export function RoundSummaryScreen({ game }: { game: GameState }) {
         <Muted>On reprend les mêmes {game.deck.length} cartes, remélangées.</Muted>
         <Text style={[styles.starter, { color: starterTeam.color }]}>
           {starter.name} commence
-          {game.carryOverMs !== null ? ` avec ${Math.ceil(game.carryOverMs / 1000)} s` : ''} !
+          {game.keepsTurn ? ` avec un chrono complet (${game.settings.turnSeconds} s)` : ''} !
         </Text>
       </Card>
 

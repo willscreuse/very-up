@@ -1,6 +1,7 @@
 import {
   ALL_ERAS,
   buildPool,
+  findExisting,
   cardText,
   cardYear,
   ERAS,
@@ -82,5 +83,34 @@ describe('construction de la pioche', () => {
 
   it('sans période choisie, prend tout le paquet', () => {
     expect(buildPool(['celebrites'])).toHaveLength(packById('celebrites')!.cards.length);
+  });
+});
+
+describe('cartes créées par les joueurs', () => {
+  const playerCards = [
+    { text: 'Shrek 2', packId: 'films' },
+    { text: 'Tonton Michel', packId: 'personnages' },
+  ];
+
+  it('rejoignent la pioche de leur catégorie, marquées comme créées par un joueur', () => {
+    const pool = buildPool(['films'], undefined, playerCards);
+    const shrek = pool.find((c) => c.text === 'Shrek 2')!;
+    expect(shrek.custom).toBe(true);
+    expect(shrek.category).toContain('Films');
+    // Pas de carte d'un paquet non choisi.
+    expect(pool.some((c) => c.text === 'Tonton Michel')).toBe(false);
+  });
+
+  it('restent dans la pioche quelle que soit la période choisie', () => {
+    const pool = buildPool(['films'], { films: [0, 0] }, playerCards);
+    expect(pool.some((c) => c.text === 'Shrek 2')).toBe(true);
+  });
+
+  it('repère une carte qui existe déjà, aux accents, majuscules et articles près', () => {
+    expect(findExisting('roi lion')?.pack.id).toBe('films');
+    expect(findExisting('LE ROI-LION !')?.byPlayer).toBe(false);
+    expect(findExisting('zinedine zidane')?.pack.id).toBe('celebrites');
+    expect(findExisting('tonton michel', playerCards)).toEqual({ pack: packById('personnages'), byPlayer: true });
+    expect(findExisting('Une carte toute neuve', playerCards)).toBeNull();
   });
 });

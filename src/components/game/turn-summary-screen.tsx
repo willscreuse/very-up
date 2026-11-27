@@ -4,7 +4,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { Button, Muted, Screen, Title } from '@/components/ui';
 import { cardById, currentPlayer, currentTeam, turnPoints } from '@/game/selectors';
-import { type GameState, MIN_CARRY_OVER_MS, ROUND_COUNT } from '@/game/types';
+import { type GameState, ROUND_COUNT } from '@/game/types';
 import { feedback } from '@/services/feedback';
 import { useGameStore } from '@/store/gameStore';
 import { colors, font, radius, spacing } from '@/theme/tokens';
@@ -15,8 +15,7 @@ export function TurnSummaryScreen({ game }: { game: GameState }) {
   const player = currentPlayer(game);
   const points = turnPoints(game.currentTurn, game.settings.skipPenalty);
   const roundOver = game.pile.length === 0;
-  const keepsTime =
-    roundOver && game.round + 1 < ROUND_COUNT && (game.carryOverMs ?? 0) >= MIN_CARRY_OVER_MS;
+  const keepsTurn = roundOver && game.round + 1 < ROUND_COUNT && game.keepsTurn === true;
 
   // Écran figé une seconde : évite qu'un appui de trop valide le tour par erreur.
   const [locked, setLocked] = useState(true);
@@ -34,10 +33,10 @@ export function TurnSummaryScreen({ game }: { game: GameState }) {
         {player.name} : {points > 0 ? '+' : ''}
         {points} point{Math.abs(points) > 1 ? 's' : ''}
       </Title>
-      {keepsTime && (
+      {keepsTurn && (
         <Muted>
-          ⚡ {player.name} garde {Math.ceil((game.carryOverMs ?? 0) / 1000)} s pour commencer la
-          manche suivante.
+          ⚡ {player.name} commencera la manche suivante avec un chrono complet (
+          {game.settings.turnSeconds} s).
         </Muted>
       )}
       <Muted>Touchez une carte pour corriger son résultat.</Muted>

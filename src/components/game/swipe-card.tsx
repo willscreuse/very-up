@@ -153,7 +153,13 @@ export function SwipeCard({ ref, card, borderColor, onFlingStart, onResult }: Pr
 
           {card && (
             <>
-              {card.category && <Text style={styles.category}>{card.category}</Text>}
+              {card.custom || card.authorId ? (
+                <View style={styles.customBadge}>
+                  <Text style={styles.customBadgeText}>✍️ Carte créée par un joueur</Text>
+                </View>
+              ) : (
+                card.category && <Text style={styles.category}>{card.category}</Text>
+              )}
               <Text
                 style={[styles.cardText, { fontSize: webFontSize(card.text) ?? font.display }]}
                 adjustsFontSizeToFit
@@ -187,6 +193,19 @@ const styles = StyleSheet.create({
   },
   category: {
     color: '#6B5FA0',
+    fontSize: font.caption,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  customBadge: {
+    backgroundColor: '#6B5FA0',
+    borderRadius: radius.pill,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+  customBadgeText: {
+    color: colors.text,
     fontSize: font.caption,
     fontWeight: '800',
     textTransform: 'uppercase',

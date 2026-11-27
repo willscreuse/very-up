@@ -16,8 +16,9 @@ export function TurnIntroScreen({ game }: { game: GameState }) {
   const team = currentTeam(game);
   const player = currentPlayer(game);
   const rule = ROUNDS[game.round];
-  const bonusSeconds = game.carryOverMs === null ? null : Math.ceil(game.carryOverMs / 1000);
-  const seconds = bonusSeconds ?? game.settings.turnSeconds;
+  const seconds = game.settings.turnSeconds;
+  // L'équipe a vidé le paquet à la manche précédente : elle enchaîne.
+  const continues = game.keepsTurn === true && game.round > 0;
 
   return (
     <Screen scroll>
@@ -41,9 +42,11 @@ export function TurnIntroScreen({ game }: { game: GameState }) {
         <Text style={styles.heroTeam}>{team.name}</Text>
       </Animated.View>
 
-      {bonusSeconds !== null && (
+      {continues && (
         <Animated.View entering={FadeInDown.delay(150)} style={styles.bonus}>
-          <Text style={styles.bonusText}>⚡ Tu continues avec ton temps restant : {bonusSeconds} s</Text>
+          <Text style={styles.bonusText}>
+            ⚡ Ton équipe a vidé le paquet : tu enchaînes avec un chrono complet !
+          </Text>
         </Animated.View>
       )}
 

@@ -6,6 +6,7 @@ import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { InstallHint } from '@/components/install-hint';
 import { Button, Muted, Screen } from '@/components/ui';
 import { ROUNDS } from '@/game/rounds';
+import { useCustomCards } from '@/store/customCardsStore';
 import { sortedGames, useGameStore } from '@/store/gameStore';
 import { usePreferences } from '@/store/preferencesStore';
 import { colors, font, spacing } from '@/theme/tokens';
@@ -19,6 +20,7 @@ export default function Home() {
   const latest = saved.find((g) => g.game.phase !== 'finished');
   const canResume = latest !== undefined;
   const prefs = usePreferences();
+  const myCardsCount = useCustomCards((s) => s.cards.length);
 
   return (
     <Screen style={styles.container}>
@@ -79,6 +81,13 @@ export default function Home() {
               newGame(lastSetup.teams, lastSetup.settings);
               router.push('/game');
             }}
+          />
+        )}
+        {myCardsCount > 0 && (
+          <Button
+            label={`✍️ Mes cartes (${myCardsCount})`}
+            variant="secondary"
+            onPress={() => router.push('/my-cards')}
           />
         )}
         <Button label="Règles du jeu" variant="ghost" onPress={() => router.push('/rules')} />

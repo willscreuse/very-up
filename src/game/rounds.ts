@@ -20,8 +20,9 @@ export const ROUNDS: RoundRule[] = [
   },
   {
     title: 'Manche 3',
-    short: 'Mimes uniquement',
-    description: 'Aucun mot, aucun son : uniquement des gestes et des mimes.',
-    emoji: '🤫',
+    short: 'Mimes et bruitages',
+    description:
+      'Aucun mot ! Mime, et fais du bruit si tu veux : fredonne une chanson, fais des bruitages et des onomatopées (vroum, miaou, boum…).',
+    emoji: '🎭',
   },
 ];

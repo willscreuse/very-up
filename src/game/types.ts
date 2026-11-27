@@ -6,8 +6,10 @@ export interface Card {
   id: string;
   text: string;
   category?: string;
-  /** Joueur qui a écrit la carte (cartes perso uniquement). */
+  /** Joueur qui a écrit la carte pendant la partie. */
   authorId?: string;
+  /** Carte créée par un joueur (pendant cette partie ou une précédente). */
+  custom?: boolean;
 }
 
 export interface Player {
@@ -78,10 +80,10 @@ export interface GameState {
   /** Horodatage (ms) de fin du tour en cours, null hors phase « playing ». */
   turnEndsAt: number | null;
   /**
-   * Temps restant (ms) quand une équipe vide le paquet avant la fin du chrono :
-   * elle le conserve pour commencer la manche suivante.
+   * Vrai quand l'équipe qui joue a vidé le paquet pendant son tour :
+   * elle commence la manche suivante, avec un chrono complet.
    */
-  carryOverMs: number | null;
+  keepsTurn?: boolean;
   /**
    * Étape d'écriture des cartes perso (null si désactivée ou terminée).
    * Pendant cette étape, `deck` contient les cartes des paquets qui serviront
@@ -97,11 +99,18 @@ export interface GameState {
 export interface WritingState {
   /** Index (dans l'ordre des équipes puis des joueurs) du joueur qui écrit. */
   playerIndex: number;
-  cards: { authorId: string; text: string }[];
+  cards: WrittenCard[];
+}
+
+export interface WrittenCard {
+  authorId: string;
+  text: string;
+  /** Libellé de la catégorie choisie (« 🎬 Films & séries »…). */
+  category?: string;
 }
 
 export type GameAction =
-  | { type: 'SUBMIT_CUSTOM_CARDS'; texts: string[] }
+  | { type: 'SUBMIT_CUSTOM_CARDS'; cards: { text: string; category?: string }[] }
   | { type: 'START_TURN'; now: number }
   | { type: 'FOUND'; now: number }
   | { type: 'SKIP' }
@@ -115,6 +124,3 @@ export const ROUND_COUNT = 3;
 
 export const CUSTOM_CATEGORY = '✍️ Cartes des joueurs';
 export const CUSTOM_CARD_MAX_LENGTH = 40;
-
-/** En dessous de ce reliquat, on ne garde pas le temps pour la manche suivante. */
-export const MIN_CARRY_OVER_MS = 1000;

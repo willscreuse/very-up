@@ -3,6 +3,7 @@ import { type ComponentRef, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,10 +12,12 @@ import {
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { Button, Muted, Screen, Title } from '@/components/ui';
-import { cardText, PACKS } from '@/data/packs';
+import { cardText, findExisting, packById, packLabel, PACKS } from '@/data/packs';
 import { writingOrder } from '@/game/engine';
+import { cardKey } from '@/game/text';
 import { CUSTOM_CARD_MAX_LENGTH, type GameState } from '@/game/types';
 import { feedback } from '@/services/feedback';
+import { useCustomCards } from '@/store/customCardsStore';
 import { useGameStore } from '@/store/gameStore';
 import { colors, font, radius, spacing } from '@/theme/tokens';
 
@@ -26,13 +29,15 @@ const PLACEHOLDERS = [
   'Ce que tu veux !',
 ];
 
-const ALL_IDEAS = PACKS.filter((p) => !p.badge).flatMap((p) => p.cards.map(cardText));
+const ALL_IDEAS = PACKS.filter((p) => !p.badge).flatMap((p) =>
+  p.cards.map((c) => ({ text: cardText(c), packId: p.id })),
+);
 
-function randomIdea(exclude: string[]): string {
-  const taken = new Set(exclude.map((t) => t.trim().toLocaleLowerCase('fr')));
+function randomIdea(exclude: string[]) {
+  const taken = new Set(exclude.map(cardKey));
   for (let i = 0; i < 20; i++) {
     const idea = ALL_IDEAS[Math.floor(Math.random() * ALL_IDEAS.length)];
-    if (!taken.has(idea.toLocaleLowerCase('fr'))) return idea;
+    if (!taken.has(cardKey(idea.text))) return idea;
   }
   return ALL_IDEAS[0];
 }
@@ -44,6 +49,8 @@ function randomIdea(exclude: string[]): string {
  */
 export function WritingScreen({ game }: { game: GameState }) {
   const dispatch = useGameStore((s) => s.dispatch);
+  const playerCards = useCustomCards((s) => s.cards);
+  const addPlayerCards = useCustomCards((s) => s.addCards);
   const order = writingOrder(game);
   const index = game.writing?.playerIndex ?? 0;
   const { team, player } = order[index];
@@ -51,15 +58,36 @@ export function WritingScreen({ game }: { game: GameState }) {
 
   const [ready, setReady] = useState(false);
   const [texts, setTexts] = useState<string[]>(() => Array.from({ length: perPlayer }, () => ''));
+  const [packIds, setPackIds] = useState<(string | null)[]>(() =>
+    Array.from({ length: perPlayer }, () => null),
+  );
   const inputs = useRef<(ComponentRef<typeof TextInput> | null)[]>([]);
 
-  const cleaned = texts.map((t) => t.trim().toLocaleLowerCase('fr'));
+  const cleaned = texts.map(cardKey);
   const filled = cleaned.filter(Boolean).length;
   const hasDuplicate = new Set(cleaned.filter(Boolean)).size !== filled;
-  const complete = filled === perPlayer && !hasDuplicate;
+  const missingCategory = texts.some((t, i) => t.trim() && !packIds[i]);
+  const complete = filled === perPlayer && !hasDuplicate && !missingCategory;
+  const remaining = perPlayer - filled;
 
   const setText = (i: number, value: string) =>
     setTexts((ts) => ts.map((t, j) => (j === i ? value : t)));
+  const setPack = (i: number, packId: string) =>
+    setPackIds((ps) => ps.map((p, j) => (j === i ? packId : p)));
+
+  const submit = () => {
+    feedback.found();
+    const cards = texts.map((text, i) => ({ text, packId: packIds[i]! }));
+    // Les nouvelles cartes rejoignent la bibliothèque (les doublons sont ignorés).
+    addPlayerCards(cards);
+    dispatch({
+      type: 'SUBMIT_CUSTOM_CARDS',
+      cards: cards.map(({ text, packId }) => {
+        const pack = packById(packId);
+        return { text, category: pack ? packLabel(pack) : undefined };
+      }),
+    });
+  };
 
   if (!ready) {
     return (
@@ -98,12 +126,15 @@ export function WritingScreen({ game }: { game: GameState }) {
       <Screen scroll>
         <Title>{player.name}, à toi d’écrire !</Title>
         <Muted>
-          Touche 💡 si tu manques d’inspiration. Tes cartes reviendront dans les 3 manches : choisis
-          des choses faciles à mimer.
+          Écris ta carte puis choisis sa catégorie. Touche 💡 si tu manques d’inspiration. Tes
+          cartes reviendront dans les 3 manches, et seront gardées pour les prochaines parties.
         </Muted>
 
-        {texts.map((text, i) => (
-          <Animated.View key={i} entering={FadeInDown.delay(i * 60)} style={styles.row}>
+        {texts.map((text, i) => {
+          const existing = text.trim() ? findExisting(text, playerCards) : null;
+          return (
+          <Animated.View key={i} entering={FadeInDown.delay(i * 60)} style={styles.block}>
+          <View style={styles.row}>
             <Text style={styles.number}>{i + 1}</Text>
             <TextInput
               ref={(el) => {
@@ -128,24 +159,62 @@ export function WritingScreen({ game }: { game: GameState }) {
               hitSlop={8}
               onPress={() => {
                 feedback.tap();
-                setText(i, randomIdea(texts));
+                const idea = randomIdea(texts);
+                setText(i, idea.text);
+                setPack(i, idea.packId);
               }}
               style={styles.idea}>
               <Text style={styles.ideaText}>💡</Text>
             </Pressable>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.categories}>
+            {PACKS.map((pack) => {
+              const on = packIds[i] === pack.id;
+              return (
+                <Pressable
+                  key={pack.id}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: on }}
+                  accessibilityLabel={`Catégorie ${pack.name}`}
+                  onPress={() => {
+                    feedback.tap();
+                    setPack(i, pack.id);
+                  }}
+                  style={[styles.category, on && styles.categoryOn]}>
+                  <Text style={[styles.categoryText, on && styles.categoryTextOn]}>
+                    {packLabel(pack)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          {existing && (
+            <Text style={styles.notice}>
+              ℹ️ Déjà dans {existing.byPlayer ? 'les cartes des joueurs' : 'le jeu'} (
+              {packLabel(existing.pack)}) : elle sera jouée, mais pas ajoutée une 2ᵉ fois.
+            </Text>
+          )}
           </Animated.View>
-        ))}
+          );
+        })}
 
         {hasDuplicate && <Muted>Deux de tes cartes sont identiques.</Muted>}
 
         <Button
-          label={complete ? 'Valider mes cartes' : `Encore ${perPlayer - filled} carte${perPlayer - filled > 1 ? 's' : ''}`}
+          label={
+            complete
+              ? 'Valider mes cartes'
+              : remaining > 0
+                ? `Encore ${remaining} carte${remaining > 1 ? 's' : ''}`
+                : 'Choisis une catégorie pour chaque carte'
+          }
           size="lg"
           disabled={!complete}
-          onPress={() => {
-            feedback.found();
-            dispatch({ type: 'SUBMIT_CUSTOM_CARDS', texts });
-          }}
+          onPress={submit}
         />
       </Screen>
     </KeyboardAvoidingView>
@@ -174,7 +243,21 @@ const styles = StyleSheet.create({
   heroName: { color: colors.primaryText, fontSize: font.display + 8, fontWeight: '900' },
   heroTeam: { color: colors.primaryText, fontSize: font.title, fontWeight: '800' },
   center: { textAlign: 'center' },
+  block: { gap: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  categories: { gap: spacing.xs, paddingLeft: 24 + spacing.sm },
+  category: {
+    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  categoryOn: { borderColor: colors.primary, backgroundColor: colors.primary },
+  categoryText: { color: colors.textMuted, fontWeight: '700', fontSize: font.caption },
+  categoryTextOn: { color: colors.primaryText },
+  notice: { color: colors.textMuted, fontSize: font.caption, paddingLeft: 24 + spacing.sm },
   number: { color: colors.primary, fontWeight: '900', fontSize: font.title, width: 24 },
   input: {
     flex: 1,

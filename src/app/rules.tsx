@@ -34,16 +34,19 @@ export default function Rules() {
         <Muted>
           👉 Glisse la carte à droite (ou « Trouvé ») : elle est gagnée.{'\n'}👈 Glisse-la à
           gauche (ou « Passer ») : elle retourne sous le paquet.{'\n'}↩️ Une erreur ? Annule la
-          dernière action, ou corrige dans le récap.{'\n'}⚡ Paquet vidé avant la fin du chrono ? Tu
-          gardes le temps restant pour commencer la manche suivante.
+          dernière action, ou corrige dans le récap.{'\n'}⏰ Chrono écoulé sur une carte ? Elle
+          retourne dans le paquet, qui est remélangé avant le tour suivant.{'\n'}⚡ Paquet vidé
+          avant la fin du chrono ? Ton équipe commence la manche suivante, avec un chrono complet.
         </Muted>
       </Card>
 
       <Card>
         <Text style={styles.roundTitle}>✍️ Cartes des joueurs</Text>
         <Muted>
-          En option, chaque joueur écrit quelques cartes en secret avant la partie. Elles sont
-          mélangées aux cartes des paquets (ou jouées seules si aucun paquet n’est choisi).
+          En option, chaque joueur écrit quelques cartes en secret avant la partie et choisit leur
+          catégorie. Elles sont mélangées aux cartes des paquets (ou jouées seules si aucun paquet
+          n’est choisi), puis gardées pour les parties suivantes. Retrouve-les dans « Mes cartes »
+          pour supprimer celles que tu ne veux plus.
         </Muted>
       </Card>
 

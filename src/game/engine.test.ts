@@ -78,6 +78,17 @@ describe('déroulé d’un tour', () => {
     expect(g.turnEndsAt).toBeNull();
   });
 
+  it('remélange le paquet à la fin du tour : la carte en main ne passe pas à l’équipe suivante', () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const g0 = createGame({ teams, pool, seed, settings: { turnSeconds: 30, cardCount: 6, skipPenalty: 0 } });
+      const g1 = run(g0, start, { type: 'FOUND', now: 2000 }, { type: 'TIME_UP' });
+      const inHand = g1.pile[0];
+      const g2 = run(g1, { type: 'CONFIRM_TURN' });
+      expect(g2.pile[0]).not.toBe(inHand);
+      expect([...g2.pile].sort()).toEqual([...g1.pile].sort());
+    }
+  });
+
   it('passe à l’équipe suivante puis fait tourner les joueurs', () => {
     let g = run(newGame(), start, { type: 'TIME_UP' }, { type: 'CONFIRM_TURN' });
     expect(currentTeam(g).id).toBe('B');
@@ -120,34 +131,33 @@ describe('manches et score', () => {
     expect(board.reduce((s, r) => s + r.total, 0)).toBe(12);
   });
 
-  it('garde le temps restant pour la manche suivante quand le paquet est vidé', () => {
+  it('l’équipe qui vide le paquet commence la manche suivante avec un chrono complet', () => {
     let g = run(newGame(2), start); // fin du tour prévue à 31000
     g = run(g, { type: 'FOUND', now: 5000 }, { type: 'FOUND', now: 11000 });
-    expect(g.carryOverMs).toBe(20000);
+    expect(g.keepsTurn).toBe(true);
     g = run(g, { type: 'CONFIRM_TURN' }, { type: 'NEXT_ROUND' });
     expect(currentTeam(g).id).toBe('A');
     expect(currentPlayer(g).id).toBe('a1');
     g = run(g, { type: 'START_TURN', now: 50000 });
-    expect(g.turnEndsAt).toBe(70000);
-    expect(g.carryOverMs).toBeNull();
-    // Le tour suivant revient à une durée normale et passe à l'équipe B.
+    expect(g.turnEndsAt).toBe(80000); // 30 s complètes, pas le reliquat
+    expect(g.keepsTurn).toBe(false);
+    // Le tour suivant passe à l'équipe B.
     g = run(g, { type: 'TIME_UP' }, { type: 'CONFIRM_TURN' }, { type: 'START_TURN', now: 0 });
     expect(currentTeam(g).id).toBe('B');
     expect(g.turnEndsAt).toBe(30000);
   });
 
-  it('ne garde pas de reliquat inférieur à 1 seconde', () => {
-    let g = run(newGame(1), start, { type: 'FOUND', now: 30500 });
+  it('garde la main même si le paquet est vidé à la dernière seconde', () => {
+    let g = run(newGame(1), start, { type: 'FOUND', now: 30900 });
     g = run(g, { type: 'CONFIRM_TURN' });
-    expect(g.carryOverMs).toBeNull();
-    expect(currentTeam(g).id).toBe('B');
+    expect(currentTeam(g).id).toBe('A');
   });
 
-  it('abandonne le reliquat si une correction remet une carte dans le paquet', () => {
+  it('rend la main si une correction remet une carte dans le paquet', () => {
     let g = run(newGame(1), start, { type: 'FOUND', now: 5000 });
     g = run(g, { type: 'TOGGLE_EVENT', index: 0 }, { type: 'CONFIRM_TURN' });
     expect(g.phase).toBe('turnIntro');
-    expect(g.carryOverMs).toBeNull();
+    expect(g.keepsTurn).toBe(false);
     expect(currentTeam(g).id).toBe('B');
   });
 
@@ -167,7 +177,10 @@ describe('cartes écrites par les joueurs', () => {
       seed: 5,
       settings: { turnSeconds: 30, cardCount, skipPenalty: 0, customCardsPerPlayer: perPlayer },
     });
-  const submit = (texts: string[]): GameAction => ({ type: 'SUBMIT_CUSTOM_CARDS', texts });
+  const submit = (texts: string[]): GameAction => ({
+    type: 'SUBMIT_CUSTOM_CARDS',
+    cards: texts.map((text) => ({ text })),
+  });
 
   it('commence par l’étape d’écriture, joueur après joueur', () => {
     let g = withCustom(10);
@@ -210,6 +223,25 @@ describe('cartes écrites par les joueurs', () => {
       submit(['Chat', '']),
     );
     expect(g.deck.map((c) => c.text).sort()).toEqual(['Chat', 'Pizza', 'Tour Eiffel', 'Zinédine Zidane']);
+  });
+
+  it('marque les cartes des joueurs et garde leur catégorie', () => {
+    let g = withCustom(6, 1, []);
+    g = run(
+      g,
+      { type: 'SUBMIT_CUSTOM_CARDS', cards: [{ text: 'Shrek', category: '🎬 Films & séries' }] },
+      submit(['Une licorne']),
+      submit(['Le Roi Lion']),
+    );
+    const shrek = g.deck.find((c) => c.text === 'Shrek')!;
+    expect(shrek.custom).toBe(true);
+    expect(shrek.category).toBe('🎬 Films & séries');
+    expect(g.deck.every((c) => c.custom)).toBe(true);
+  });
+
+  it('fusionne les doublons aux accents et articles près', () => {
+    const g = run(withCustom(6, 1, []), submit(['Le Roi Lion']), submit(['roi lion']), submit(['Zidane']));
+    expect(g.deck.map((c) => c.text).sort()).toEqual(['Le Roi Lion', 'Zidane']);
   });
 
   it('ignore une soumission vide', () => {

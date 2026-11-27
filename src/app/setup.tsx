@@ -6,6 +6,7 @@ import { Button, Card, ChipGroup, Muted, Screen, Title } from '@/components/ui';
 import { PackPicker } from '@/components/pack-picker';
 import { buildPool, DEFAULT_PACK_IDS, packById } from '@/data/packs';
 import type { Settings, Team } from '@/game/types';
+import { useCustomCards } from '@/store/customCardsStore';
 import { DEFAULT_SETTINGS, useGameStore } from '@/store/gameStore';
 import { colors, font, radius, spacing, teamPalette } from '@/theme/tokens';
 
@@ -30,6 +31,7 @@ function makeTeam(index: number): Team {
 export default function Setup() {
   const lastSetup = useGameStore((s) => s.lastSetup);
   const newGame = useGameStore((s) => s.newGame);
+  const playerCards = useCustomCards((s) => s.cards);
 
   const [teams, setTeams] = useState<Team[]>(() => lastSetup?.teams ?? [makeTeam(0), makeTeam(1)]);
   const [settings, setSettings] = useState<Settings>(() => {
@@ -52,7 +54,8 @@ export default function Setup() {
   const customTotal = perPlayer * playerCount;
   const packIds = settings.packIds ?? [];
   const packEras = settings.packEras ?? {};
-  const available = buildPool(packIds, packEras).length;
+  const available = buildPool(packIds, packEras, playerCards).length;
+  const playerCardsInPacks = playerCards.filter((c) => packIds.includes(c.packId)).length;
   const countOptions = [20, 30, 40, 60].filter((n) => n <= available + customTotal);
   if (available > 0 && countOptions.length === 0) countOptions.push(available + customTotal);
   // Si le nombre choisi dépasse ce que les paquets offrent, on prend la plus grande option possible.
@@ -164,12 +167,18 @@ export default function Setup() {
         />
         <Muted>
           {available} carte{available > 1 ? 's' : ''} disponible{available > 1 ? 's' : ''}
+          {playerCardsInPacks > 0
+            ? `, dont ${playerCardsInPacks} créée${playerCardsInPacks > 1 ? 's' : ''} par les joueurs`
+            : ''}
         </Muted>
       </Card>
 
       <Card>
         <Text style={styles.label}>✍️ Cartes écrites par les joueurs</Text>
-        <Muted>Avant la partie, chacun écrit quelques cartes en secret.</Muted>
+        <Muted>
+          Avant la partie, chacun écrit quelques cartes en secret. Elles sont gardées pour les
+          parties suivantes.
+        </Muted>
         <ChipGroup
           options={[0, 2, 3, 4, 5]}
           value={perPlayer}
