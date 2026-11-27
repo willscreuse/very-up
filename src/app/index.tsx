@@ -4,6 +4,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { InstallHint } from '@/components/install-hint';
+import { UpdateBanner } from '@/components/update-banner';
 import { Button, Muted, Screen } from '@/components/ui';
 import { ROUNDS } from '@/game/rounds';
 import { useCustomCards } from '@/store/customCardsStore';
@@ -49,6 +50,7 @@ export default function Home() {
       </View>
 
       <View style={styles.actions}>
+        <UpdateBanner />
         <InstallHint />
         {canResume && (
           <Button

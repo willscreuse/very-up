@@ -42,6 +42,11 @@ self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
 });
 
+// Le bandeau « Nouvelle version » de l'app demande d'activer tout de suite la nouvelle version.
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('activate', (event) => {
   // Supprime les caches des anciennes versions.
   event.waitUntil(
